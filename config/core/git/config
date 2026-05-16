@@ -1,0 +1,35 @@
+[color]
+	ui = auto
+
+[init]
+	defaultBranch = master
+
+[pull]
+	rebase = true
+
+[push]
+	default = upstream
+
+[fetch]
+	prune = true
+
+[rerere]
+	enabled = true
+
+[core]
+	quotepath = false
+	autocrlf = false
+
+[alias]
+	co = checkout
+	cm = commit
+	fp = fetch --prune
+	cb = checkout -b
+	st = status -s
+	last = log -1 HEAD
+	ls = log --oneline
+	lg = log --oneline --decorate --graph --all
+	lag = log --decorate --graph --all
+	db = branch -d
+	mg = merge
+	tree = log --graph --pretty=format:"%C(auto)%d" --all --simplify-by-decoration

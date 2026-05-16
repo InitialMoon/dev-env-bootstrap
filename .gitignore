@@ -1,0 +1,19 @@
+# Private/local configuration
+.env
+.env.*
+*.local.json
+*.local.toml
+.claude/settings.local.json
+config/core/shell/local.sh
+config/core/claude/settings.local.json
+config/core/codex/config.local.toml
+
+# Build/cache outputs
+build/
+*.o
+*.out
+
+# OS/editor noise
+.DS_Store
+*.swp
+*.swo

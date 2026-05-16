@@ -1,0 +1,29 @@
+[user]
+	name = InitialMoon
+	email = jieyingqi814@qq.com
+[core]
+	editor = vim
+	quotepath = false
+	autocrlf = false
+[init]
+	defaultBranch = master
+[alias]
+	co = checkout
+	cm = commit
+	pf = push --force
+	fp = fetch --prune
+	cb = checkout -b
+	st = status -s
+	last = log -1 HEAD
+	ls = log --oneline
+	lg = log --oneline --decorate --graph --all
+	lag = log --decorate --graph --all
+	db = branch -d
+	mg = merge
+	tree = log --graph --pretty=format:"%C(auto)%d" --all --simplify-by-decoration
+[pull]
+	rebase = true
+[rerere]
+	enable = true
+[push]
+	default = upstream

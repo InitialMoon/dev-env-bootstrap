@@ -1,0 +1,6 @@
+# Shared Codex defaults live here.
+# Keep tokens, private paths, and machine-specific settings in ~/.codex/config.local.toml or another private file.
+
+# model = ""
+# approval_policy = ""
+# sandbox_mode = ""

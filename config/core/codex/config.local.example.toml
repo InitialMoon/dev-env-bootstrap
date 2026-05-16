@@ -1,0 +1,4 @@
+# Copy machine-specific Codex settings to ~/.codex/config.local.toml if your Codex setup supports it.
+# Do not commit API keys, private paths, or work-only settings.
+
+# api_key_env = "OPENAI_API_KEY"

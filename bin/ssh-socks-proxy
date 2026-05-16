@@ -1,0 +1,165 @@
+#!/usr/bin/env bash
+set -Eeuo pipefail
+
+HOST="${SSH_SOCKS_HOST:-}"
+SOCKS_ADDR="${SSH_SOCKS_ADDR:-127.0.0.1}"
+SOCKS_PORT="${SSH_SOCKS_PORT:-16668}"
+PROXY_URL="socks5h://${SOCKS_ADDR}:${SOCKS_PORT}"
+STATE_DIR="${XDG_RUNTIME_DIR:-/tmp}/ssh-socks-proxy-${UID}"
+CONTROL_SOCKET="${STATE_DIR}/control.sock"
+LOG_FILE="${STATE_DIR}/ssh.log"
+
+NO_PROXY_DEFAULT="localhost,127.0.0.1,::1,192.168.0.0/16,10.0.0.0/8,172.16.0.0/12"
+
+usage() {
+  cat <<EOF
+Usage: $0 <command>
+
+Commands:
+  on       Start SSH SOCKS5 tunnel on ${SOCKS_ADDR}:${SOCKS_PORT}
+  off      Stop the tunnel
+  restart  Restart the tunnel
+  status   Show tunnel status
+  env      Print proxy environment exports for the current shell
+  shell    Start a new shell with proxy environment enabled
+  run CMD  Run one command with proxy environment enabled
+  test     Test outbound access through the tunnel with curl
+
+Defaults can be overridden:
+  SSH_SOCKS_HOST=${HOST:-<required>}
+  SSH_SOCKS_ADDR=${SOCKS_ADDR}
+  SSH_SOCKS_PORT=${SOCKS_PORT}
+EOF
+}
+
+require_host() {
+  if [[ -z "${HOST}" ]]; then
+    echo "missing SSH_SOCKS_HOST; set it to a host from your local SSH config" >&2
+    exit 2
+  fi
+}
+
+mkdir_state_dir() {
+  mkdir -p "${STATE_DIR}"
+  chmod 700 "${STATE_DIR}"
+}
+
+is_running() {
+  require_host
+  [[ -S "${CONTROL_SOCKET}" ]] && ssh -S "${CONTROL_SOCKET}" -O check "${HOST}" >/dev/null 2>&1
+}
+
+start_tunnel() {
+  require_host
+  mkdir_state_dir
+  if is_running; then
+    echo "ssh socks proxy is already running: ${PROXY_URL}"
+    return 0
+  fi
+
+  ssh \
+    -fN \
+    -M \
+    -S "${CONTROL_SOCKET}" \
+    -o ExitOnForwardFailure=yes \
+    -o ServerAliveInterval=30 \
+    -o ServerAliveCountMax=3 \
+    -D "${SOCKS_ADDR}:${SOCKS_PORT}" \
+    "${HOST}" \
+    >"${LOG_FILE}" 2>&1
+
+  echo "ssh socks proxy started: ${PROXY_URL}"
+}
+
+stop_tunnel() {
+  require_host
+  if is_running; then
+    ssh -S "${CONTROL_SOCKET}" -O exit "${HOST}" >/dev/null 2>&1 || true
+    echo "ssh socks proxy stopped"
+  else
+    echo "ssh socks proxy is not running"
+  fi
+}
+
+print_env() {
+  cat <<EOF
+export ALL_PROXY='${PROXY_URL}'
+export all_proxy='${PROXY_URL}'
+export HTTPS_PROXY='${PROXY_URL}'
+export https_proxy='${PROXY_URL}'
+export HTTP_PROXY='${PROXY_URL}'
+export http_proxy='${PROXY_URL}'
+export NO_PROXY='\${NO_PROXY:-${NO_PROXY_DEFAULT}}'
+export no_proxy='\${no_proxy:-${NO_PROXY_DEFAULT}}'
+EOF
+}
+
+status_tunnel() {
+  if is_running; then
+    echo "running: ${PROXY_URL}"
+    echo "control socket: ${CONTROL_SOCKET}"
+  else
+    echo "stopped"
+    if [[ -f "${LOG_FILE}" ]]; then
+      echo "last ssh log: ${LOG_FILE}"
+    fi
+  fi
+}
+
+run_with_proxy() {
+  start_tunnel >/dev/null
+  export ALL_PROXY="${PROXY_URL}" all_proxy="${PROXY_URL}"
+  export HTTPS_PROXY="${PROXY_URL}" https_proxy="${PROXY_URL}"
+  export HTTP_PROXY="${PROXY_URL}" http_proxy="${PROXY_URL}"
+  export NO_PROXY="${NO_PROXY:-${NO_PROXY_DEFAULT}}" no_proxy="${no_proxy:-${NO_PROXY_DEFAULT}}"
+  "$@"
+}
+
+cmd="${1:-}"
+case "${cmd}" in
+  on)
+    start_tunnel
+    ;;
+  off)
+    stop_tunnel
+    ;;
+  restart)
+    stop_tunnel
+    start_tunnel
+    ;;
+  status)
+    status_tunnel
+    ;;
+  env)
+    print_env
+    ;;
+  shell)
+    start_tunnel
+    echo "proxy env enabled in this shell: ${PROXY_URL}"
+    exec env \
+      ALL_PROXY="${PROXY_URL}" all_proxy="${PROXY_URL}" \
+      HTTPS_PROXY="${PROXY_URL}" https_proxy="${PROXY_URL}" \
+      HTTP_PROXY="${PROXY_URL}" http_proxy="${PROXY_URL}" \
+      NO_PROXY="${NO_PROXY:-${NO_PROXY_DEFAULT}}" no_proxy="${no_proxy:-${NO_PROXY_DEFAULT}}" \
+      "${SHELL:-/bin/bash}" -l
+    ;;
+  run)
+    shift
+    if [[ $# -eq 0 ]]; then
+      echo "missing command after 'run'" >&2
+      exit 2
+    fi
+    run_with_proxy "$@"
+    ;;
+  test)
+    run_with_proxy curl -I --max-time 15 https://www.google.com
+    ;;
+  -h|--help|help|"")
+    usage
+    ;;
+  *)
+    echo "unknown command: ${cmd}" >&2
+    usage >&2
+    exit 2
+    ;;
+esac
