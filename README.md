@@ -12,8 +12,8 @@ This repository keeps the old one-command setup goal, but separates it into safe
 ## Quick start
 
 ```bash
-git clone git@github.com:InitialMoon/my_linux_config.git
-cd my_linux_config
+git clone git@github.com:InitialMoon/dev-env-bootstrap.git
+cd dev-env-bootstrap
 ./bootstrap.sh doctor
 ./bootstrap.sh core
 ```
@@ -106,7 +106,21 @@ Use local files instead:
 
 ## macOS notes
 
-The core config is intended to work on macOS and Linux. For tmux on iTerm2, configure Option as Esc+/Meta if you want Alt-style keybindings to work.
+The core config is intended to work on macOS and Linux.
+
+### iTerm2 Option key for tmux
+
+If you want to use this tmux config on macOS with iTerm2, configure the Option key to send Esc+/Meta. The tmux bindings use Meta/Alt-style keys, and iTerm2 uses Option for special characters by default.
+
+<img width="978" alt="iTerm2 Option key setting" src="https://github.com/user-attachments/assets/724ddb18-9f40-4212-a3a1-901c8bded73a" />
+
+Steps:
+
+1. Open iTerm2 Preferences.
+2. Go to Profiles.
+3. Select your profile.
+4. Open the Keys tab.
+5. Set Left Option Key and Right Option Key to Esc+.
 
 ## Legacy notes
 
