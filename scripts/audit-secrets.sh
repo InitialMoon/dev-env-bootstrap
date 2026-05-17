@@ -5,6 +5,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd -P)"
 cd "${ROOT_DIR}"
 
 exclude_pathspecs=(
+  ':(exclude)scripts/audit-secrets.sh'
   ':(exclude)config/optional/oh-my-posh/themes'
   ':(exclude)config/optional/ranger/source'
   ':(exclude)config/core/**/*.example'
