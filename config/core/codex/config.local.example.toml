@@ -1,4 +1,18 @@
 # Copy machine-specific Codex settings to ~/.codex/config.local.toml if your Codex setup supports it.
-# Do not commit API keys, private paths, or work-only settings.
+# Do not commit API keys, local model endpoints, private paths, or work-only settings.
 
-# api_key_env = "OPENAI_API_KEY"
+# model_provider = "LocalProvider"
+# model = "example-model"
+# file_opener = "vscode"
+
+# [model_providers.LocalProvider]
+# name = "LocalProvider"
+# base_url = "https://local-provider.example.invalid"
+# wire_api = "responses"
+# requires_openai_auth = true
+
+# [projects."/path/to/private/project"]
+# trust_level = "trusted"
+
+# [tui]
+# notify = ["/path/to/private/notify-script"]

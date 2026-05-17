@@ -1,0 +1,16 @@
+# Local/private Claude Code and Codex files
+**/.claude/settings.local.json
+**/.codex/config.local.toml
+
+# Environment and secret-bearing local files
+.env
+.env.*
+*.local
+*.local.*
+*.secret
+*.secrets
+
+# OS/editor noise
+.DS_Store
+*.swp
+*.swo

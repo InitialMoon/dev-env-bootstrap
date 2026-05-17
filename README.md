@@ -28,7 +28,7 @@ For a fuller one-command setup inspired by the old `run_config.sh`, but with saf
 ./bootstrap.sh all
 ```
 
-`all` runs core setup, then optional `fish`, `nvim`, and `oh-my-posh` modules. Use `ASSUME_YES=1` to skip package prompts, or `DRY_RUN=1` to preview package/link actions.
+`all` runs core setup, then optional `fish`, `nvim`, and `oh-my-posh` modules. Use `ASSUME_YES=1` to skip package and optional installer prompts, including the Oh My Posh upstream installer, or `DRY_RUN=1` to preview package/link actions.
 
 If you only want to link configuration and avoid package installation:
 
@@ -41,12 +41,12 @@ If you only want to link configuration and avoid package installation:
 
 The default core setup manages:
 
+- cross-platform shell snippets for Bash/Zsh under `~/.config/my-linux-config/shell/`, plus Fish snippets under `~/.config/fish/conf.d/` and `~/.config/my-linux-config/fish/`
 - `tmux` config: `config/core/tmux/tmux.conf` -> `~/.tmux.conf`
-- shell snippets for Bash/Zsh under `~/.config/my-linux-config/shell/`
-- Git defaults via an include block in `~/.gitconfig`
+- Git defaults under `~/.config/my-linux-config/git/` and shared ignore rules under `~/.config/git/`
 - Yazi config under `~/.config/yazi/`
-- Claude Code templates under `~/.claude/`
-- Codex templates under `~/.codex/`
+- Claude Code shared settings, status line template, and local examples under `~/.claude/`
+- Codex shared profiles and local examples under `~/.codex/`
 - `ssh-socks-proxy` under `~/.local/bin/`
 
 The installer is conservative:
@@ -56,19 +56,30 @@ The installer is conservative:
 - managed begin/end blocks for shell and Git config
 - `unlink` only removes links/blocks owned by this repository
 
+## macOS reproducibility layer
+
+The shared core works on Linux and macOS. macOS-specific toolchain setup is opt-in:
+
+```bash
+./bootstrap.sh macos
+./bootstrap.sh interactive
+```
+
+The macOS menu can install or configure groups such as Homebrew basics, shells, editors, Java, LLVM/OpenMP, Ruby, dotnet, conda/mamba, and AI-tool notes. You can select none of them and still keep the shared core configuration.
+
 ## Optional layer
 
 Optional modules preserved from the old repo:
 
 - `config/optional/fish/` — fish and Oh My Fish config
-- `config/optional/zsh/` — old zsh/oh-my-zsh installer
+- `config/optional/zsh/` — legacy zsh/oh-my-zsh installer path kept for manual review
 - `config/optional/nvim/` — LazyVim-based Neovim config
 - `config/optional/vim/` — Vim config
-- `config/optional/oh-my-posh/` — old Oh My Posh themes; installer uses upstream script only after confirmation
-- `config/optional/ranger/` — old vendored ranger source
+- `config/optional/oh-my-posh/` — old Oh My Posh themes; installer may use upstream script after confirmation
+- `config/optional/ranger/` — package install/check plus old vendored ranger source note
 - `config/optional/legacy/` — original full config files and `run_config.sh`
 
-These are not installed by default by `core`. Install them explicitly:
+These are not installed by default by `core`. Configure or inspect selected modules explicitly:
 
 ```bash
 ./bootstrap.sh optional nvim
@@ -77,22 +88,29 @@ These are not installed by default by `core`. Install them explicitly:
 ./bootstrap.sh optional ranger
 ```
 
-Optional scripts use safe links and skip existing unmanaged paths instead of overwriting user config.
+Linking optional modules uses safe links and skips existing unmanaged paths instead of overwriting user config. `zsh` only prints the preserved legacy installer note and manual review path; `ranger` installs/checks the package and notes the vendored source; `oh-my-posh` may run the upstream installer after confirmation before linking themes.
 
 ## Commands
 
 ```bash
 ./bootstrap.sh doctor              # check platform, package manager, and tools
 ./bootstrap.sh core                # install/check core tools and link config
+./bootstrap.sh ai                  # link Claude Code and Codex shared config only
+./bootstrap.sh macos               # link macOS config and run macOS setup menu
+./bootstrap.sh interactive         # choose optional setup groups interactively
 ./bootstrap.sh all                 # core + fish + nvim + oh-my-posh
 ./bootstrap.sh optional            # show optional modules
 ./bootstrap.sh optional nvim fish  # install/configure selected optional modules
 
-./install.sh dry-run      # preview links and managed blocks
-./install.sh link         # apply core config safely
-./install.sh status       # inspect managed config state
-./install.sh unlink       # remove managed links and blocks
-./install.sh doctor       # check tool availability
+./install.sh dry-run            # preview core + AI links and managed blocks
+./install.sh link               # apply core + AI config safely
+./install.sh ai                 # link Claude Code and Codex shared config only
+./install.sh macos              # link opt-in macOS config only
+./install.sh dry-run-ai         # preview AI-tool shared config links
+./install.sh dry-run-macos      # preview opt-in macOS config links
+./install.sh status             # inspect managed config state
+./install.sh unlink             # remove managed links and blocks
+./install.sh doctor             # check tool availability
 ```
 
 ## Local/private config

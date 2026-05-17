@@ -19,10 +19,12 @@
 [core]
 	quotepath = false
 	autocrlf = false
+	excludesFile = ~/.config/git/ignore
 
 [alias]
 	co = checkout
 	cm = commit
+	pf = push --force-with-lease
 	fp = fetch --prune
 	cb = checkout -b
 	st = status -s

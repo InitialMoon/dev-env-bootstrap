@@ -1,6 +1,85 @@
-# Shared Codex defaults live here.
-# Keep tokens, private paths, and machine-specific settings in ~/.codex/config.local.toml or another private file.
+# Shared Codex defaults. Keep providers, tokens, private paths, and trusted projects local.
 
-# model = ""
-# approval_policy = ""
-# sandbox_mode = ""
+approval_policy = "on-request"
+sandbox_mode = "read-only"
+model_reasoning_effort = "medium"
+plan_mode_reasoning_effort = "high"
+model_verbosity = "medium"
+project_doc_fallback_filenames = ["CLAUDE.md", "GEMINI.md", "AGENTS.md"]
+
+[features]
+enable_request_compression = true
+multi_agent = true
+hooks = true
+
+[history]
+persistence = "save-all"
+max_bytes = 25000000
+
+[tui]
+notifications = ["agent-turn-complete", "approval-requested"]
+notification_method = "auto"
+animations = true
+show_tooltips = true
+alternate_screen = "auto"
+
+[shell_environment_policy]
+inherit = "all"
+ignore_default_excludes = false
+exclude = [
+  "*_TOKEN",
+  "*_API_KEY",
+  "*_SECRET",
+  "*_PASSWORD",
+  "*_PASSWD",
+  "ANTHROPIC_*",
+  "AWS_*",
+  "AZURE_*",
+  "DATABASE_URL",
+  "GCP_*",
+  "GEMINI_*",
+  "GH_TOKEN",
+  "GITHUB_TOKEN",
+  "GOOGLE_*",
+  "HF_TOKEN",
+  "HUGGINGFACE_*",
+  "NPM_TOKEN",
+  "OPENAI_API_KEY",
+  "OPENROUTER_*",
+  "PYPI_*",
+  "SLACK_*",
+  "WANDB_*",
+]
+set = {}
+include_only = []
+experimental_use_profile = false
+
+[sandbox_workspace_write]
+writable_roots = []
+network_access = false
+exclude_tmpdir_env_var = false
+exclude_slash_tmp = false
+
+[profiles.fast]
+approval_policy = "on-request"
+sandbox_mode = "read-only"
+model_reasoning_effort = "low"
+plan_mode_reasoning_effort = "medium"
+model_verbosity = "low"
+web_search = "cached"
+
+[profiles.build]
+approval_policy = "never"
+sandbox_mode = "workspace-write"
+model_reasoning_effort = "medium"
+plan_mode_reasoning_effort = "high"
+model_verbosity = "medium"
+web_search = "cached"
+
+[profiles.auto]
+approval_policy = "never"
+sandbox_mode = "workspace-write"
+model_reasoning_effort = "high"
+plan_mode_reasoning_effort = "high"
+model_verbosity = "medium"
+web_search = "live"
