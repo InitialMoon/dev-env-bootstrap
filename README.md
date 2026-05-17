@@ -1,4 +1,6 @@
-# my_linux_config
+# dev-env-bootstrap
+
+[English](README.md) | [简体中文](README.zh-CN.md)
 
 Personal machine setup for quickly getting a familiar terminal/development environment on Linux and macOS.
 
