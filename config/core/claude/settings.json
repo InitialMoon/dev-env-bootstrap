@@ -1,1 +1,13 @@
-{}
+{
+  "editorMode": "vim",
+  "statusLine": {
+    "type": "command",
+    "command": "~/.claude/statusline.sh"
+  },
+  "enabledPlugins": {
+    "superpowers@claude-plugins-official": true,
+    "github@claude-plugins-official": true,
+    "commit-commands@claude-plugins-official": true,
+    "playground@claude-plugins-official": true
+  }
+}

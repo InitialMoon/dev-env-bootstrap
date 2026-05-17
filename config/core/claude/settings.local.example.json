@@ -1,1 +1,16 @@
-{}
+{
+  "env": {
+    "ANTHROPIC_AUTH_TOKEN": "keep-real-token-in-settings.local.json",
+    "ANTHROPIC_BASE_URL": "https://example.invalid",
+    "API_TIMEOUT_MS": "600000"
+  },
+  "permissions": {
+    "allow": [],
+    "deny": []
+  },
+  "hooks": {},
+  "statusLine": {
+    "type": "command",
+    "command": "~/.claude/statusline.sh"
+  }
+}

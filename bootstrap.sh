@@ -22,6 +22,9 @@ Commands:
   core                Install/check core tools, then run ./install.sh link
   install             Alias for core
   link                Run ./install.sh link only
+  ai                  Link Claude Code and Codex shared config only
+  macos               Link macOS config and run the macOS setup menu
+  interactive|choose  Choose optional setup groups interactively
   optional            Show optional modules
   optional MODULE...  Install/configure optional modules: ${OPTIONAL_TOOLS[*]}
   all                 Run core, then optional fish nvim oh-my-posh
@@ -213,6 +216,48 @@ EOF
   done
 }
 
+cmd_ai() {
+  if [[ "${DRY_RUN}" == "1" ]]; then
+    "${ROOT_DIR}/install.sh" dry-run-ai
+  else
+    "${ROOT_DIR}/install.sh" ai
+  fi
+}
+
+cmd_macos() {
+  if [[ "$(platform_name)" != "macos" ]]; then
+    warn "macOS setup is only available on Darwin"
+    return 2
+  fi
+  if [[ "${DRY_RUN}" == "1" ]]; then
+    "${ROOT_DIR}/install.sh" dry-run-macos
+    "${ROOT_DIR}/scripts/macos.sh" list
+  else
+    "${ROOT_DIR}/install.sh" macos
+    "${ROOT_DIR}/scripts/macos.sh" interactive
+  fi
+}
+
+cmd_interactive() {
+  cat <<EOF
+Choose setup mode:
+  1) core
+  2) ai
+  3) macos
+  4) optional fish nvim oh-my-posh
+  5) skip
+EOF
+  read -r -p "Mode: " mode
+  case "${mode}" in
+    1) cmd_core ;;
+    2) cmd_ai ;;
+    3) cmd_macos ;;
+    4) cmd_optional fish nvim oh-my-posh ;;
+    5|"") say "skipped" ;;
+    *) warn "unknown selection: ${mode}"; return 2 ;;
+  esac
+}
+
 cmd_all() {
   cmd_core
   cmd_optional fish nvim oh-my-posh
@@ -229,6 +274,15 @@ case "${cmd}" in
     ;;
   link)
     run_install_link
+    ;;
+  ai)
+    cmd_ai
+    ;;
+  macos)
+    cmd_macos
+    ;;
+  interactive|choose)
+    cmd_interactive
     ;;
   optional)
     cmd_optional "$@"

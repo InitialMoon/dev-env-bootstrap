@@ -19,6 +19,8 @@ Usage: $0 <command>
 Commands:
   dry-run  Show what would be linked or updated
   link     Link core configuration and update shell/Git include blocks
+  ai       Link Claude Code and Codex shared config only
+  macos    Link macOS-only shared config only
   unlink   Remove links and blocks managed by this repository
   status   Show current managed configuration status
   doctor   Check basic tool availability and platform notes
@@ -100,6 +102,18 @@ link_file() {
   else
     say "would link: ${dest} -> ${src}"
   fi
+}
+
+dry_run_link_file_allow_missing() {
+  local src="$1"
+  local dest="$2"
+
+  if [[ ! -e "${src}" ]]; then
+    warn "missing source: ${src}"
+    return 0
+  fi
+
+  link_file "${src}" "${dest}"
 }
 
 unlink_file() {
@@ -314,7 +328,7 @@ check_path() {
   fi
 }
 
-managed_links() {
+managed_core_links() {
   cat <<EOF
 ${ROOT_DIR}/bin/ssh-socks-proxy|${HOME}/.local/bin/ssh-socks-proxy
 ${ROOT_DIR}/config/core/tmux/tmux.conf|${HOME}/.tmux.conf
@@ -322,17 +336,45 @@ ${ROOT_DIR}/config/core/shell/common.sh|${XDG_CONFIG_HOME}/my-linux-config/shell
 ${ROOT_DIR}/config/core/shell/bash.sh|${XDG_CONFIG_HOME}/my-linux-config/shell/bash.sh
 ${ROOT_DIR}/config/core/shell/zsh.sh|${XDG_CONFIG_HOME}/my-linux-config/shell/zsh.sh
 ${ROOT_DIR}/config/core/shell/local.example.sh|${XDG_CONFIG_HOME}/my-linux-config/shell/local.example.sh
+${ROOT_DIR}/config/core/fish/dev-env-bootstrap.fish|${XDG_CONFIG_HOME}/fish/conf.d/dev-env-bootstrap.fish
+${ROOT_DIR}/config/core/fish/local.example.fish|${XDG_CONFIG_HOME}/my-linux-config/fish/local.example.fish
 ${ROOT_DIR}/config/core/git/config|${XDG_CONFIG_HOME}/my-linux-config/git/config
 ${ROOT_DIR}/config/core/git/local.example|${XDG_CONFIG_HOME}/my-linux-config/git/local.example
+${ROOT_DIR}/config/core/git/ignore|${XDG_CONFIG_HOME}/git/ignore
 ${ROOT_DIR}/config/core/yazi/yazi.toml|${XDG_CONFIG_HOME}/yazi/yazi.toml
 ${ROOT_DIR}/config/core/yazi/keymap.toml|${XDG_CONFIG_HOME}/yazi/keymap.toml
+EOF
+}
+
+managed_ai_links() {
+  cat <<EOF
 ${ROOT_DIR}/config/core/claude/settings.json|${HOME}/.claude/settings.json
 ${ROOT_DIR}/config/core/claude/settings.local.example.json|${HOME}/.claude/settings.local.example.json
 ${ROOT_DIR}/config/core/claude/CLAUDE.md|${HOME}/.claude/CLAUDE.md
+${ROOT_DIR}/config/core/claude/statusline.sh|${HOME}/.claude/statusline.sh
 ${ROOT_DIR}/config/core/codex/config.toml|${HOME}/.codex/config.toml
 ${ROOT_DIR}/config/core/codex/config.local.example.toml|${HOME}/.codex/config.local.example.toml
 ${ROOT_DIR}/config/core/codex/AGENTS.md|${HOME}/.codex/AGENTS.md
 EOF
+}
+
+managed_macos_links() {
+  cat <<EOF
+${ROOT_DIR}/config/macos/shell/macos.sh|${XDG_CONFIG_HOME}/my-linux-config/macos/macos.sh
+${ROOT_DIR}/config/macos/shell/local.example.sh|${XDG_CONFIG_HOME}/my-linux-config/macos/local.example.sh
+EOF
+}
+
+managed_links() {
+  managed_core_links
+  managed_ai_links
+}
+
+managed_links_with_platform_opt_ins() {
+  managed_links
+  if [[ "${PLATFORM}" == "macos" ]]; then
+    managed_macos_links
+  fi
 }
 
 for_each_link() {
@@ -344,13 +386,29 @@ for_each_link() {
   done < <(managed_links)
 }
 
+for_each_link_from() {
+  local provider="$1"
+  local action="$2"
+  local src dest
+  while IFS='|' read -r src dest; do
+    [[ -n "${src}" ]] || continue
+    "${action}" "${src}" "${dest}"
+  done < <("${provider}")
+}
+
 link_blocks() {
   local git_config_path="${XDG_CONFIG_HOME}/my-linux-config/git/config"
   write_block "${HOME}/.bashrc" "${SHELL_BLOCK_BEGIN}" "${SHELL_BLOCK_END}" 'if [[ -r "${HOME}/.config/my-linux-config/shell/bash.sh" ]]; then
   source "${HOME}/.config/my-linux-config/shell/bash.sh"
+fi
+if [[ "$(uname -s)" == "Darwin" && -r "${HOME}/.config/my-linux-config/macos/macos.sh" ]]; then
+  source "${HOME}/.config/my-linux-config/macos/macos.sh"
 fi'
-  write_block "${HOME}/.zshrc" "${SHELL_BLOCK_BEGIN}" "${SHELL_BLOCK_END}" 'if [[ -r "${HOME}/.config/my-linux-config/shell/zsh.sh" ]]; then
+  prepend_block "${HOME}/.zshrc" "${SHELL_BLOCK_BEGIN}" "${SHELL_BLOCK_END}" 'if [[ -r "${HOME}/.config/my-linux-config/shell/zsh.sh" ]]; then
   source "${HOME}/.config/my-linux-config/shell/zsh.sh"
+fi
+if [[ "$(uname -s)" == "Darwin" && -r "${HOME}/.config/my-linux-config/macos/macos.sh" ]]; then
+  source "${HOME}/.config/my-linux-config/macos/macos.sh"
 fi'
   prepend_block "${HOME}/.gitconfig" "${GIT_BLOCK_BEGIN}" "${GIT_BLOCK_END}" "[include]
 	path = ${git_config_path}"
@@ -377,6 +435,34 @@ status_blocks() {
   done
 }
 
+cmd_ai() {
+  MODE="link"
+  for_each_link_from managed_ai_links link_file
+}
+
+cmd_macos() {
+  MODE="link"
+  if [[ "${PLATFORM}" != "macos" ]]; then
+    warn "macOS links are only available on Darwin"
+    return 2
+  fi
+  for_each_link_from managed_macos_links link_file
+}
+
+cmd_dry_run_ai() {
+  MODE="dry-run"
+  for_each_link_from managed_ai_links dry_run_link_file_allow_missing
+}
+
+cmd_dry_run_macos() {
+  MODE="dry-run"
+  if [[ "${PLATFORM}" != "macos" ]]; then
+    warn "macOS links are only available on Darwin"
+    return 2
+  fi
+  for_each_link_from managed_macos_links dry_run_link_file_allow_missing
+}
+
 cmd_link() {
   MODE="link"
   for_each_link link_file
@@ -391,14 +477,14 @@ cmd_dry_run() {
 
 cmd_unlink() {
   MODE="unlink"
-  for_each_link unlink_file
+  for_each_link_from managed_links_with_platform_opt_ins unlink_file
   unlink_blocks
 }
 
 cmd_status() {
   MODE="status"
   say "platform: ${PLATFORM}"
-  for_each_link check_path
+  for_each_link_from managed_links_with_platform_opt_ins check_path
   status_blocks
   if [[ -e "${ROOT_DIR}/.codex" && ! -d "${ROOT_DIR}/.codex" ]]; then
     say "legacy placeholder: ${ROOT_DIR}/.codex"
@@ -450,6 +536,18 @@ case "${cmd}" in
     ;;
   link)
     cmd_link
+    ;;
+  ai)
+    cmd_ai
+    ;;
+  macos)
+    cmd_macos
+    ;;
+  dry-run-ai)
+    cmd_dry_run_ai
+    ;;
+  dry-run-macos)
+    cmd_dry_run_macos
     ;;
   unlink)
     cmd_unlink

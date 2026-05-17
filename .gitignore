@@ -1,12 +1,18 @@
 # Private/local configuration
 .env
 .env.*
-*.local.json
-*.local.toml
+*.local
+*.local.*
+*.secret
+*.secrets
 .claude/settings.local.json
+.codex/config.local.toml
 config/core/shell/local.sh
+config/core/shell/*.local.sh
+config/core/fish/local.fish
 config/core/claude/settings.local.json
 config/core/codex/config.local.toml
+config/macos/shell/local.sh
 
 # Build/cache outputs
 build/
